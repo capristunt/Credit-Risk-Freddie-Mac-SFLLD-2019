@@ -74,6 +74,24 @@ _ORIG_DTYPES = {
     "interest_only_indicator": "str",
 }
 
+_PERF_COLUMNS_OF_INTEREST = {
+    0: "loan_sequence_number",
+    1: "monthly_reporting_period",
+    3: "current_loan_delinquency_status",
+    4: "loan_age",
+    8: "zero_balance_code",
+    9: "zero_balance_effective_date",
+}
+
+_PERF_DTYPES = {
+    "loan_sequence_number": "str",
+    "monthly_reporting_period": "Int64",
+    "current_loan_delinquency_status": "str",
+    "loan_age": "Int64",
+    "zero_balance_code": "str",
+    "zero_balance_effective_date": "Int64",
+}
+
 
 class FreddieMacLoader:
     """Load raw Freddie Mac SFLLD files into pandas DataFrames.
@@ -101,6 +119,26 @@ class FreddieMacLoader:
             header=None,
             names=_ORIG_COLUMNS,
             dtype=_ORIG_DTYPES,
+            na_values=[""],
+            keep_default_na=True,
+        )
+
+    def load_performance(self, filename: str = "sample_perf_2019.txt") -> pd.DataFrame:
+        """Load the monthly performance file. One row per loan per observation month.
+        
+        Only six columns are loaded (see _PERF_COLUMNS_OF_INTEREST): the join key,
+        the reporting period, the delinquency status, the loan age, and the two
+        zero-balance columns. Other columns from the Standard Dataset layout are
+        skipped at read time to save memory.
+        """
+        path = self.data_raw / filename
+        return pd.read_csv(
+            path,
+            sep="|",
+            header=None,
+            usecols=list(_PERF_COLUMNS_OF_INTEREST.keys()),
+            names=[_PERF_COLUMNS_OF_INTEREST[i] for i in sorted(_PERF_COLUMNS_OF_INTEREST.keys())],
+            dtype=_PERF_DTYPES,
             na_values=[""],
             keep_default_na=True,
         )
